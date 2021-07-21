@@ -1,0 +1,35 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: fr3akyphantom/droid-builder:latest
+    steps:
+      - checkout
+      - run:
+          name: Checking Free Space
+          command: df -h && echo "Cores = $(nproc --all)" && echo "Ram = $(free -h)"
+      - run:
+          name: Building Environment
+          command: |
+            echo "Configuring git"
+            git config --global user.email "ekora2001@gmail.com"
+            git config --global user.name "xoo2001"
+            git config --global color.ui "true"
+            echo "git identity setup successfully!"
+      - run:
+          name: Cloning Repos Trees
+          command: |
+            repo init --depth=1 --no-repo-verify -u https://github.com/NusantaraProject-ROM/android_manifest.git -b 11 -g default,-device,-mips,-darwin,-notdefault
+            git clone https://github.com/xoo2001/local_manifest.git --depth=1 -b Nusantara-11 .repo/local_manifests
+            repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune --force-sync -j8
+      - run:
+          name: Start Building ROM
+          command: |
+            . build/envsetup.sh
+            lunch nad_ido-userdebug
+            export ALLOWS_MISSING_DEPENDENCIES="true"
+            make nad
+      - store_artifacts:
+          path: out/target/product/ido/ROM_test.zip
+          destination: ROM_test.zip
+
